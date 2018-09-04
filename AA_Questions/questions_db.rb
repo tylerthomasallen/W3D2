@@ -21,6 +21,20 @@ class User
     @lname = options['lname']
   end
   
+  def average_karma
+    user = QuestionsDBConnection.instance.execute(<<-SQL, @id)
+    SELECT
+      *
+    FROM
+      questions
+    LEFT JOIN
+      question_likes ON questions.id = question_likes.question_id
+    WHERE
+      question.user_id = 5
+      
+    
+  end
+  
   def followed_questions
     QuestionFollow.followed_questions_for_user_id(@id)
   end
@@ -75,6 +89,10 @@ class Question
   
   def self.most_followed(n)
     QuestionFollow.most_followed_questions(n)
+  end
+  
+  def self.most_liked(n)
+    QuestionLike.most_liked_questions(n)
   end
   
   def likers
