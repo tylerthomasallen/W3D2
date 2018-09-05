@@ -21,18 +21,40 @@ class User
     @lname = options['lname']
   end
   
+  def save
+    if @id
+      QuestionsDBConnection.instance.execute(<<-SQL, @fname, @lname, @id)
+      UPDATE
+        users
+      SET
+        fname = ?, lname = ?
+      WHERE
+        id = ?
+      SQL
+    else
+      QuestionsDBConnection.instance.execute(<<-SQL, @fname, @lname)
+      INSERT INTO
+        users (fname, lname)
+      VALUES
+        (?, ?)
+      SQL
+      @id = QuestionsDBConnection.instance.last_insert_row_id
+    end
+  end
+  
   def average_karma
-    user = QuestionsDBConnection.instance.execute(<<-SQL, @id)
+    num = QuestionsDBConnection.instance.execute(<<-SQL, @id)
     SELECT
-      *
+      COUNT(DISTINCT(questions.id)) / COUNT(question_likes.question_id)
     FROM
       questions
     LEFT JOIN
       question_likes ON questions.id = question_likes.question_id
     WHERE
-      question.user_id = 5
-      
+      questions.user_id = ?
+    SQL
     
+    num.first.values.first
   end
   
   def followed_questions
@@ -85,6 +107,27 @@ class Question
     @title = options['title']
     @body = options['body']
     @user_id = options['user_id']
+  end
+  
+  def save
+    if @id
+      QuestionsDBConnection.instance.execute(<<-SQL, @body, @title, @user_id, @id)
+      UPDATE
+        questions
+      SET
+        body = ?, title = ?, user_id = ?
+      WHERE
+        id = ?
+      SQL
+    else
+      QuestionsDBConnection.instance.execute(<<-SQL, @body, @title, @user_id)
+      INSERT INTO
+        questions (body, title, user_id)
+      VALUES
+        (?, ?, ?)
+      SQL
+      @id = QuestionsDBConnection.instance.last_insert_row_id
+    end
   end
   
   def self.most_followed(n)
@@ -147,6 +190,27 @@ class Reply
     @body = options['body']
     @question_id = options['question_id']
     @user_id = options['user_id']
+  end
+  
+  def save
+    if @id
+      QuestionsDBConnection.instance.execute(<<-SQL, @body, @parent_id, @user_id, @question_id, @id)
+      UPDATE
+        replies
+      SET
+        body = ?, parent_id = ?, user_id = ?, question_id = ?
+      WHERE
+        id = ?
+      SQL
+    else
+      QuestionsDBConnection.instance.execute(<<-SQL, @body, @parent_id, @user_id, @question_id)
+      INSERT INTO
+        replies (body, parent_id, user_id, question_id)
+      VALUES
+        (?, ?, ?, ?)
+      SQL
+      @id = QuestionsDBConnection.instance.last_insert_row_id
+    end
   end
   
   def self.find_by_id(id)
